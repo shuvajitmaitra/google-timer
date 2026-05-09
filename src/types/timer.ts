@@ -4,7 +4,6 @@ export interface Timer {
   duration: number;
   remainingTime: number;
   status: 'running' | 'paused' | 'completed';
-  position: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -19,5 +18,4 @@ export interface UpdateTimerInput {
   duration?: number;
   remainingTime?: number;
   status?: 'running' | 'paused' | 'completed';
-  position?: number;
 }

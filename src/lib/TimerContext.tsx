@@ -14,7 +14,6 @@ type TimerAction =
   | { type: 'ADD_TIMER'; payload: Timer }
   | { type: 'UPDATE_TIMER'; payload: { id: string; updates: UpdateTimerInput } }
   | { type: 'DELETE_TIMER'; payload: string }
-  | { type: 'REORDER_TIMERS'; payload: Timer[] }
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_ERROR'; payload: string | null }
   | { type: 'TICK'; payload: { id: string; remainingTime: number } };
@@ -25,7 +24,6 @@ interface TimerContextType {
   createTimer: (input: CreateTimerInput) => Promise<void>;
   updateTimer: (id: string, input: UpdateTimerInput) => Promise<void>;
   deleteTimer: (id: string) => Promise<void>;
-  reorderTimers: (activeId: string, overId: string) => Promise<void>;
   tick: (id: string, remainingTime: number) => void;
 }
 
@@ -46,8 +44,6 @@ function timerReducer(state: TimerState, action: TimerAction): TimerState {
       };
     case 'DELETE_TIMER':
       return { ...state, timers: state.timers.filter((t) => t._id !== action.payload) };
-    case 'REORDER_TIMERS':
-      return { ...state, timers: action.payload };
     case 'SET_LOADING':
       return { ...state, loading: action.payload };
     case 'SET_ERROR':
@@ -93,7 +89,12 @@ export function TimerProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify(input),
       });
       const data = await res.json();
-      dispatch({ type: 'ADD_TIMER', payload: data.timer });
+      const newTimer = {
+        ...data.timer,
+        remainingTime: data.timer.duration,
+        status: 'paused' as const,
+      };
+      dispatch({ type: 'ADD_TIMER', payload: newTimer });
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: 'Failed to create timer' });
     }
@@ -101,15 +102,6 @@ export function TimerProvider({ children }: { children: ReactNode }) {
 
   const updateTimer = useCallback(async (id: string, input: UpdateTimerInput) => {
     dispatch({ type: 'UPDATE_TIMER', payload: { id, updates: input } });
-    try {
-      await fetch(`/api/timers/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(input),
-      });
-    } catch (error) {
-      dispatch({ type: 'SET_ERROR', payload: 'Failed to update timer' });
-    }
   }, []);
 
   const deleteTimer = useCallback(async (id: string) => {
@@ -121,28 +113,6 @@ export function TimerProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const reorderTimers = useCallback(async (activeId: string, overId: string) => {
-    const oldIndex = state.timers.findIndex((t) => t._id === activeId);
-    const newIndex = state.timers.findIndex((t) => t._id === overId);
-    if (oldIndex === -1 || newIndex === -1) return;
-
-    const newTimers = [...state.timers];
-    const [removed] = newTimers.splice(oldIndex, 1);
-    newTimers.splice(newIndex, 0, removed);
-    const reordered = newTimers.map((t, i) => ({ ...t, position: i }));
-    dispatch({ type: 'REORDER_TIMERS', payload: reordered });
-
-    try {
-      await fetch('/api/timers/reorder', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ activeId, overId }),
-      });
-    } catch (error) {
-      dispatch({ type: 'SET_ERROR', payload: 'Failed to reorder timers' });
-    }
-  }, [state.timers]);
-
   const tick = useCallback((id: string, remainingTime: number) => {
     dispatch({ type: 'TICK', payload: { id, remainingTime } });
   }, []);
@@ -153,7 +123,7 @@ export function TimerProvider({ children }: { children: ReactNode }) {
 
   return (
     <TimerContext.Provider
-      value={{ state, fetchTimers, createTimer, updateTimer, deleteTimer, reorderTimers, tick }}
+      value={{ state, fetchTimers, createTimer, updateTimer, deleteTimer, tick }}
     >
       {children}
     </TimerContext.Provider>

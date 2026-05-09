@@ -5,7 +5,7 @@ import Timer from '@/lib/timer';
 export async function GET() {
   try {
     await connectDB();
-    const timers = await Timer.find().sort({ position: 1 });
+    const timers = await Timer.find();
     return NextResponse.json({ timers });
   } catch (error) {
     return NextResponse.json({ error: 'Failed to fetch timers' }, { status: 500 });
@@ -18,13 +18,9 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { name, duration } = body;
 
-    const lastTimer = await Timer.findOne().sort({ position: -1 });
-    const position = lastTimer ? lastTimer.position + 1 : 0;
-
     const timer = await Timer.create({
       name,
       duration,
-      position,
     });
 
     return NextResponse.json({ timer }, { status: 201 });

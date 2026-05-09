@@ -2,27 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { Plus } from 'lucide-react';
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-} from '@dnd-kit/core';
-import {
-  SortableContext,
-  sortableKeyboardCoordinates,
-  rectSortingStrategy,
-} from '@dnd-kit/sortable';
 import { useTimers } from '@/lib/TimerContext';
 import TimerCard from './TimerCard';
 import AddTimerModal from './AddTimerModal';
 import { useTimerTick } from '@/hooks/useTimerTick';
 
 export default function Dashboard() {
-  const { state, reorderTimers } = useTimers();
+  const { state } = useTimers();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showReloadWarning, setShowReloadWarning] = useState(false);
 
@@ -38,20 +24,6 @@ export default function Dashboard() {
     }
   }, [state.loading, state.timers.length]);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (over && active.id !== over.id) {
-      reorderTimers(active.id as string, over.id as string);
-    }
-  };
-
   if (state.loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -64,22 +36,11 @@ export default function Dashboard() {
     <main className="min-h-screen bg-background p-8">
       <h1 className="text-gray-400 text-sm mb-8 tracking-widest uppercase">Google Timer</h1>
 
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleDragEnd}
-      >
-        <SortableContext
-          items={state.timers.map((t) => t._id)}
-          strategy={rectSortingStrategy}
-        >
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {state.timers.map((timer) => (
-              <TimerCard key={timer._id} timer={timer} />
-            ))}
-          </div>
-        </SortableContext>
-      </DndContext>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {state.timers.map((timer) => (
+          <TimerCard key={timer._id} timer={timer} />
+        ))}
+      </div>
 
       {state.timers.length === 0 && !state.loading && (
         <div className="text-gray-500 text-center mt-20">
