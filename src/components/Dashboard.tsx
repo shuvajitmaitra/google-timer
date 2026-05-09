@@ -15,14 +15,14 @@ export default function Dashboard() {
   useTimerTick();
 
   useEffect(() => {
-    if (!state.loading && state.timers.length > 0) {
-      const hasSeenWarning = sessionStorage.getItem('timer-reload-warning');
-      if (!hasSeenWarning) {
-        setShowReloadWarning(true);
-        sessionStorage.setItem('timer-reload-warning', 'true');
-      }
+    const hasRunningTimer = state.timers.some((t) => t.status === 'running');
+    const hasSeenWarning = sessionStorage.getItem('timer-reload-warning');
+    
+    if (!state.loading && hasRunningTimer && !hasSeenWarning) {
+      setShowReloadWarning(true);
+      sessionStorage.setItem('timer-reload-warning', 'true');
     }
-  }, [state.loading, state.timers.length]);
+  }, [state.loading, state.timers]);
 
   if (state.loading) {
     return (

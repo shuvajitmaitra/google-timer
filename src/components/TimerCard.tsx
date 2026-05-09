@@ -14,7 +14,18 @@ export default function TimerCard({ timer }: TimerCardProps) {
   const { updateTimer, deleteTimer } = useTimers();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isAlarmPlaying, setIsAlarmPlaying] = useState(false);
+  const [extraTime, setExtraTime] = useState(0);
+  const originalDurationRef = useRef(timer.duration);
   const isCompleted = timer.status === "completed" && timer.remainingTime === 0;
+
+  useEffect(() => {
+    if (timer.status === 'paused') {
+      originalDurationRef.current = timer.duration;
+      setExtraTime(0);
+    }
+  }, [timer.status, timer.duration]);
+
+  const currentTotalDuration = timer.duration + extraTime;
 
   useEffect(() => {
     audioRef.current = new Audio("/alarm.mp3");
@@ -35,7 +46,7 @@ export default function TimerCard({ timer }: TimerCardProps) {
     audioRef.current?.pause();
     audioRef.current!.currentTime = 0;
     setIsAlarmPlaying(false);
-    updateTimer(timer._id, { remainingTime: timer.duration, status: "paused" });
+    updateTimer(timer._id, { remainingTime: originalDurationRef.current, status: "paused" });
   }, [timer, updateTimer]);
 
   const formatTime = (seconds: number) => {
@@ -44,24 +55,22 @@ export default function TimerCard({ timer }: TimerCardProps) {
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
-  const progress = timer.duration > 0 ? (timer.remainingTime / timer.duration) * 100 : 0;
+  const progress = currentTotalDuration > 0 ? (timer.remainingTime / currentTotalDuration) * 100 : 0;
 
   const handlePlayPause = useCallback(() => {
-    console.log('Play clicked, current status:', timer.status);
     if (timer.status === "completed") {
-      updateTimer(timer._id, { remainingTime: timer.duration, status: "paused" });
+      updateTimer(timer._id, { remainingTime: originalDurationRef.current, status: "paused" });
     } else if (timer.status === "running") {
-      updateTimer(timer._id, { remainingTime: timer.duration, status: "paused" });
+      updateTimer(timer._id, { remainingTime: originalDurationRef.current, status: "paused" });
     } else {
-      console.log('Setting status to running');
       updateTimer(timer._id, { status: "running" });
     }
   }, [timer, updateTimer]);
 
   const handleAddTime = useCallback(() => {
     const newRemaining = timer.remainingTime + 60;
-    const newDuration = timer.duration + 60;
-    updateTimer(timer._id, { remainingTime: newRemaining, duration: newDuration });
+    setExtraTime((prev) => prev + 60);
+    updateTimer(timer._id, { remainingTime: newRemaining });
   }, [timer, updateTimer]);
 
   return (
