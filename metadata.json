@@ -1,0 +1,6 @@
+{
+  "name": "Remainder Clock",
+  "description": "A global timer application with multiple concurrent timers, visual circular progress, alarm sound, and MongoDB persistence.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
