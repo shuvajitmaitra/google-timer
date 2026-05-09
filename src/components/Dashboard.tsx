@@ -10,19 +10,9 @@ import { useTimerTick } from "@/hooks/useTimerTick";
 export default function Dashboard() {
   const { state } = useTimers();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [showReloadWarning, setShowReloadWarning] = useState(false);
 
   useTimerTick();
 
-  useEffect(() => {
-    const hasRunningTimer = state.timers.some((t) => t.status === "running");
-    const hasSeenWarning = sessionStorage.getItem("timer-reload-warning");
-
-    if (!state.loading && hasRunningTimer && !hasSeenWarning) {
-      setShowReloadWarning(true);
-      sessionStorage.setItem("timer-reload-warning", "true");
-    }
-  }, [state.loading, state.timers]);
 
   if (state.loading) {
     return (
@@ -55,20 +45,6 @@ export default function Dashboard() {
 
       <AddTimerModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
 
-      {showReloadWarning && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-          <div className="bg-card rounded-3xl p-6 w-96">
-            <h2 className="text-white text-xl font-medium mb-4">Timer Status</h2>
-            <p className="text-gray-400 mb-6">Timers are managed locally. Reloading the page will reset all timer progress.</p>
-            <button
-              onClick={() => setShowReloadWarning(false)}
-              className="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-colors font-medium"
-            >
-              I Understand
-            </button>
-          </div>
-        </div>
-      )}
     </main>
   );
 }
