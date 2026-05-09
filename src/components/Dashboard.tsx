@@ -6,12 +6,14 @@ import { useTimers } from "@/lib/TimerContext";
 import TimerCard from "./TimerCard";
 import AddTimerModal from "./AddTimerModal";
 import { useTimerTick } from "@/hooks/useTimerTick";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 
 export default function Dashboard() {
   const { state } = useTimers();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useTimerTick();
+  useDocumentTitle();
 
 
   if (state.loading) {
